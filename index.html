@@ -6,86 +6,137 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>Team Dash</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.8.2/css/bulma.css" rel="stylesheet">
     <link rel="stylesheet" href="dash.css">
 </head>
 
 <body>
     <div class="container">
-        <section class="hero">
-            <div class="hero-body">
+        <section class="hero is-small">
+            <div class="hero-body" style="padding-bottom: 0">
                 <h1 class="title">Team Dash</h1>
             </div>
         </section>
 
-        <div id='tabs' class="tabs">
-            <ul>
-                <li id='tab_dashboard' class="is-active" onclick="updateTab('tab_dashboard')"><a>Dashboard</a></li>
-                <li id='tab_data' onclick="updateTab('tab_data')"><a>Data</a></li>
-                <li id='tab_setting' onclick="updateTab('tab_setting')"><a>Settings</a></li>
-            </ul>
+        <div class='section'>
+            <div id='tabs' class="tabs">
+                <ul>
+                    <li id='tab_dashboard' class="is-active" onclick="updateTab('tab_dashboard')"><a>Dashboard</a></li>
+                    <li id='tab_data' onclick="updateTab('tab_data')"><a>Data</a></li>
+                    <li id='tab_setting' onclick="updateTab('tab_setting')"><a>Settings</a></li>
+                </ul>
+            </div>
         </div>
 
         <div id='tab_containers' class='container'>
-            <div id='tab_dashboard_container' class='tab_container display-block'>
-                <canvas id="myChart"></canvas>
-            </div>
 
-            <div id='tab_data_container' class='tab_container display-none'>
-                <div class='columns'>
-                    <h2 class='column is-three-quarters'>Project, BTA, CON, SC, M</h2>
-                    <button class='button is-primary' onclick='save()'>Save</button>
+            <!-- DASHBOARD -->
+            <div id='tab_dashboard_container' class='tab_container'>
+                <div class='section'>
+                    <div class="tile is-ancestor">
+                        <div class="tile is-parent">
+                            <article class="tile tile is-child box">
+                                <p class="title">Android</p>
+                                <p class="subtitle">20</p>
+                                <canvas id="myChart"></canvas>
+                            </article>
+                        </div>
+                        <div class="tile is-parent">
+                            <article class="tile is-child box">
+                                <p class="title">iOS</p>
+                                <p class="subtitle">30</p>
+                            </article>
+                        </div>
+                        <div class="tile is-parent">
+                            <article class="tile is-child box">
+                                <p class="title">FE</p>
+                                <p class="subtitle">40</p>
+                            </article>
+                        </div>
+                    </div>
                 </div>
-                <textarea id='team_textarea' class="textarea" placeholder="10 lines of textarea" rows="20"></textarea>
+
+                <!-- 
+                LEVEL DISTRIBUTION DASHBOARD
+            -->
+                <div class='section'>
+                    <div class="tile is-ancestor">
+                        <div class="tile is-parent">
+                            <article class="tile tile is-child box">
+                                <p class="title">Distribution Numbers</p>
+                                <canvas id="chart_distribution_num"></canvas>
+                            </article>
+                        </div>
+                        <div class="tile is-parent">
+                            <article class="tile tile is-child box">
+                                <p class="title">Distribution %</p>
+                                <canvas id="chart_distribution_pct"></canvas>
+                            </article>
+                        </div>
+                    </div>
+                </div>
+
+
+            <!-- 
+                DEMAND DASHBOARD
+             -->
+                <div class='section'>
+                    <div class="tile is-ancestor">
+                        <div class="tile is-parent">
+                            <article class="tile tile is-child box">
+                                <p class="title">Demand</p>
+                                <canvas id="chart_demand_project"></canvas>
+                            </article>
+                        </div>
+                        <div class="tile is-parent">
+                            <article class="tile tile is-child box">
+                                <p class="title">Demand SKills</p>
+                                <canvas id="chart_demand_skill"></canvas>
+                            </article>
+                        </div>
+                    </div>
+                </div>
+             </div>  <!-- END OF DASHBOARD -->
+
+
+            <!-- DATA -->
+            <div id='tab_data_container' class='tab_container display-none'>
+                <div class="section">
+                    <div id="drop_zone" class="tile" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)">
+                        <article class="tile is-child notification is-light">
+                            <p class="subtitle">Drag and drop xls here</p>
+                        </article>
+                    </div>
+
+                    <br>
+                    <article class="message">
+                        <div id="xls_process_result" class="message-body">
+                            No Info yet.
+                        </div>
+                    </article>
+
+                    <div id="xls_as_html" class="is-light   ">
+                    </div>
+                </div>
             </div>
 
+            <!-- SETTINGS -->
             <div id='tab_setting_container' class='tab_container display-none'>
-                Container setting
+                <div class="section">
+                    Container setting
+                </div>
             </div>
 
         </div>
     </div>
+    <script language="javascript" type="text/javascript" src='https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js'></script>
+    <script lang="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.0/xlsx.full.min.js"></script>
+    <script lang="javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js"></script>
+    <script lang="javascript" src="https://www.amcharts.com/lib/4/core.js"></script>
+    <script lang="javascript" src="https://www.amcharts.com/lib/4/charts.js"></script>
+    <script lang="javascript" src="https://www.amcharts.com/lib/4/themes/animated.js"></script>
+    <script lang="javascript" src="dash.js"></script>
 
-    <Script language="javascript" type="text/javascript" src='dash.js'></Script>
-    <Script language="javascript" type="text/javascript"
-        src='https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.min.js'></Script>
-    <script>
-        var ctx = document.getElementById('myChart').getContext('2d');
-        var myChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-                datasets: [{
-                    label: '# of Votes',
-                    data: [12, 19, 3, 5, 2, 3],
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.2)',
-                        'rgba(54, 162, 235, 0.2)',
-                        'rgba(255, 206, 86, 0.2)',
-                        'rgba(75, 192, 192, 0.2)',
-                        'rgba(153, 102, 255, 0.2)',
-                        'rgba(255, 159, 64, 0.2)'
-                    ],
-                    borderColor: [
-                        'rgba(255, 99, 132, 1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(153, 102, 255, 1)',
-                        'rgba(255, 159, 64, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            // options: {
-            //     scales: {
-            //         yAxes: [{
-            //             ticks: {
-            //                 beginAtZero: true
-            //             }
-            //         }]
-            //     }
-            // }
-        });
-    </script>
 </body>
+
+</html>

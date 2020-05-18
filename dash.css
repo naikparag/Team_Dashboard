@@ -1,7 +1,22 @@
 .display-none {
-    display: none
+  display: none;
 }
 
 .display-block {
-    display: block
+  display: block;
+}
+
+#drop_zone {
+  /* border: 1px solid gray; */
+  height: 100px;
+}
+
+#xls_as_html {
+  overflow: scroll;
+  max-height: 20em;
+  background-color:#f2f2f2;
+}
+
+.section {
+    padding-bottom: 0.5rem;
 }
