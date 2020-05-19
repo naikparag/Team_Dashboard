@@ -18,29 +18,17 @@ function ProcessExcel(file) {
             type: 'binary'
         })
 
-        console.log('sheet names ------')
-        console.log(wb.SheetNames)
-        updateWBSheetNames(wb.Sheets['DX Roster 5.11'])
-        resultJson = sheetToJson(wb.Sheets['DX Roster 5.11'])
-        resultiOS = _.filter(resultJson, {
-            'Primary Skill': 'Apple iOS'
-        })
-        resultAndroid = _.filter(resultJson, {
-            'Primary Skill': 'Google Android'
-        })
-        resultFE = _.filter(resultJson, {
-            'Primary Skill': 'Digital Front End Development'
-        })
-        resultMobile = _.filter(resultJson, function (row) {
-            return row['Primary Skill'] == 'Xamarin' || row['Primary Skill'] == 'Apple iOS' || row['Primary Skill'] == 'Google Android'
-        })
+        APP_GLOBAL.android = {}
+        APP_GLOBAL.ios = {}
+        APP_GLOBAL.fe = {}
 
-        APP_GLOBAL.result = {}
-        APP_GLOBAL.json = resultJson
-        APP_GLOBAL.result.iOS = resultiOS
-        APP_GLOBAL.result.android = resultAndroid
-        APP_GLOBAL.result.mobile = resultMobile
-        APP_GLOBAL.result.FE = resultFE
+        identifySheets(wb.SheetNames)
+        processRoster(wb.Sheets[APP_GLOBAL.sheetname.roster])
+        updateStatus('Roster processed')
+        processDemand(wb.Sheets[APP_GLOBAL.sheetname.demand])
+        updateStatus('Demand processed')
+        processBench(wb.Sheets[APP_GLOBAL.sheetname.bench])
+        updateStatus('Bench processed')
 
         syncGlobal()
         updateDashboard()
@@ -48,30 +36,90 @@ function ProcessExcel(file) {
     reader.readAsBinaryString(file)
 }
 
-function updateWBSheetNames(sheet) {
-    // let result_div = document.getElementById('xls_process_result')
-    // result_div.innerText = sheetNames
+function processDemand(sheet) {
 
-    let resuult_html = document.getElementById('xls_as_html')
-    resuult_html.innerHTML = XLSX.utils.sheet_to_html(sheet)
+    resultJson = XLSX.utils.sheet_to_json(sheet)
+
+    resultJson = _.map(resultJson, function(row){
+        row['Role Name'] = row['Role Name'].split('|')[0]
+        return row
+    })
+
+    demandByRoles = _.groupBy(resultJson, 'Role Name')
+
+    let androidDemand = _.sumBy(demandByRoles['Google Android'], 'Remaining Positions') || 0
+    let iosDemand = _.sumBy(demandByRoles['Apple iOS'], 'Remaining Positions') || 0
+    let feDemand = _.sumBy(demandByRoles['Digital Front End Development'], 'Remaining Positions') || 0
+
+    APP_GLOBAL.android.demand = androidDemand
+    APP_GLOBAL.ios.demand = iosDemand
+    APP_GLOBAL.fe.demand = feDemand
 }
 
-function sheetToJson(sheet) {
-    let resultJson = XLSX.utils.sheet_to_json(sheet)
-    // console.log(resultJson)
+function processBench(sheet) {
 
-    return resultJson
+    resultJson = XLSX.utils.sheet_to_json(sheet)
+
+    demandByRoles = _.groupBy(resultJson, 'Primary Skill')
+
+    let androidBench = demandByRoles['Google Android'].length || 0
+    let iosBench = demandByRoles['Apple iOS'].length || 0
+    let feBench = demandByRoles['Digital Front End Development'].length || 0
+
+    APP_GLOBAL.android.bench = androidBench
+    APP_GLOBAL.ios.bench = iosBench
+    APP_GLOBAL.fe.bench = feBench
+
 }
 
-function dispalyStats() {
-    let result = APP_GLOBAL.result
+function updateStatus(text) {
 
-    console.log(_.countBy(result.iOS, 'Level Group (Employee) (Current)'))
+    let status_parent = document.getElementById('xls_process_result')
+
+    var status_notification = document.createElement('div')
+    status_notification.innerHTML = text
+    status_notification.className = 'notification is-primary is-light'
+
+    status_parent.appendChild(status_notification)
 }
 
-function syncGlobal() {
-    sessionStorage.setItem('APP_GLOBAL', JSON.stringify(APP_GLOBAL))
+function identifySheets(sheetNames) {
+
+    APP_GLOBAL.sheetname = {}
+    const rosterMatch = sheetNames.filter(s => (s.toLowerCase()).includes('roster'))
+    APP_GLOBAL.sheetname.roster = rosterMatch[0]
+    const demandMatch = sheetNames.filter(s => (s.toLowerCase()).includes('demand'))
+    APP_GLOBAL.sheetname.demand = demandMatch[0]
+    const benchMatch = sheetNames.filter(s => (s.toLowerCase()).includes('bench'))
+    APP_GLOBAL.sheetname.bench = benchMatch[0]
 }
+
+function processRoster(sheet) {
+
+    resultJson = XLSX.utils.sheet_to_json(sheet)
+    resultiOS = _.filter(resultJson, {
+        'Primary Skill': 'Apple iOS'
+    })
+    resultAndroid = _.filter(resultJson, {
+        'Primary Skill': 'Google Android'
+    })
+    resultFE = _.filter(resultJson, {
+        'Primary Skill': 'Digital Front End Development'
+    })
+    resultMobile = _.filter(resultJson, function (row) {
+        return row['Primary Skill'] == 'Xamarin' || row['Primary Skill'] == 'Apple iOS' || row['Primary Skill'] == 'Google Android'
+    })
+
+    APP_GLOBAL.result = {}
+    APP_GLOBAL.json = resultJson
+    APP_GLOBAL.result.iOS = resultiOS
+    APP_GLOBAL.result.android = resultAndroid
+    APP_GLOBAL.result.mobile = resultMobile
+    APP_GLOBAL.result.FE = resultFE
+
+}
+
+// SKILL DISTRIBUTION DASHBOARD
 
 function updateDashboard() {
 
@@ -179,18 +227,6 @@ function updateDistChart(canvasElementId, chartDataT, labels) {
 }
 
 function getDistDataForChart(dist) {
-    // let result = new Map()
-
-    // result.set('SM', dist['SR Manager'] || 0)
-    // result.set('M', dist['Manager'] || 0)
-    // result.set('Scon', dist['Senior/Senior Consultant'] || 0)
-    // result.set('Con', dist['Staff/Consultant'] || 0)
-    // result.set('AA/BTA', dist['Junior Staff/Analyst'] || 0)
-    // result.set('Intern', dist['Intern'] || 0)
-    // result.set('Others', dist['Client Service-Other Support'] || 0)
-
-    // console.log(result)
-
     let result = []
     result.push(dist['SR Manager'] || 0)
     result.push(dist['Manager'] || 0)
@@ -202,6 +238,21 @@ function getDistDataForChart(dist) {
 
     return result
 }
+
+// INIT
+
+function init() {
+    // get data from local storage and display
+    // document.getElementById('team_textarea').innerHTML = window.localStorage.getItem('team_data')
+    APP_GLOBAL = {}
+    APP_GLOBAL.status = 'start'
+    updateDashboard()
+}
+
+init()
+
+
+// HANDLE TABS
 
 function resetTabs() {
     var tabs = Array.from(document.getElementById("tabs").getElementsByTagName("li"))
@@ -223,8 +274,9 @@ function updateTab(tabName) {
 
     var tabContainer = document.getElementById(tabName + '_container')
     tabContainer.classList.remove('display-none')
-    // tabContainer.classList.add('display-block')
 }
+
+// HANDLE DRAG DROP
 
 function dropHandler(ev) {
     console.log('File(s) dropped');
@@ -258,66 +310,14 @@ function dragOverHandler(ev) {
     ev.preventDefault();
 }
 
-function save() {
-    var teamData = document.getElementById('team_textarea').value
-    window.localStorage.setItem('team_data', teamData);
+// HELPER FUNCTIONS
+
+function dispalyStats() {
+    let result = APP_GLOBAL.result
+
+    console.log(_.countBy(result.iOS, 'Level Group (Employee) (Current)'))
 }
 
-function updateChart() {
-
-    data = {
-        labels: ['SM', 'M', 'SC', 'CON', 'AA/BTA'],
-        datasets: [{
-            label: 'Distribution',
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.2)',
-                'rgba(54, 162, 235, 0.2)',
-                'rgba(255, 206, 86, 0.2)',
-                'rgba(75, 192, 192, 0.2)',
-                'rgba(153, 102, 255, 0.2)',
-                'rgba(255, 159, 64, 0.2)'
-            ],
-            borderColor: [
-                'rgba(255, 99, 132, 1)',
-                'rgba(54, 162, 235, 1)',
-                'rgba(255, 206, 86, 1)',
-                'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)',
-                'rgba(255, 159, 64, 1)'
-            ],
-            borderWidth: 1,
-            data: [1, 3, 10, 10, 40]
-        }]
-    }
-
-    options = {
-        scales: {
-            xAxes: [{
-                barPercentage: 0.5,
-                barThickness: 2,
-                maxBarThickness: 4,
-                minBarLength: 20,
-                gridLines: {
-                    offsetGridLines: false
-                }
-            }]
-        }
-    };
-
-    var ctx = document.getElementById('myChart').getContext('2d');
-    var chart = new Chart(ctx, {
-        type: 'horizontalBar',
-        data: data,
-        options: options
-    });
+function syncGlobal() {
+    sessionStorage.setItem('APP_GLOBAL', JSON.stringify(APP_GLOBAL))
 }
-
-function init() {
-    // get data from local storage and display
-    // document.getElementById('team_textarea').innerHTML = window.localStorage.getItem('team_data')
-    APP_GLOBAL = {}
-    APP_GLOBAL.status = 'start'
-    updateDashboard()
-}
-
-init()
